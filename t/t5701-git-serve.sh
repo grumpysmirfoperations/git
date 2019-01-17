@@ -112,6 +112,27 @@ test_expect_success 'basic ref-prefixes' '
 	test_cmp expect actual
 '
 
+test_expect_success 'ref prefix with namespaced repository' '
+	# Create a namespaced ref
+	git update-ref refs/namespaces/ns/refs/heads/master "$(git rev-parse refs/tags/one)" &&
+
+	test-tool pkt-line pack >in <<-EOF &&
+	command=ls-refs
+	0001
+	ref-prefix refs/heads/master
+	0000
+	EOF
+
+	cat >expect <<-EOF &&
+	$(git rev-parse refs/tags/one) refs/heads/master
+	0000
+	EOF
+
+	GIT_NAMESPACE=ns git serve --stateless-rpc <in >out &&
+	test-tool pkt-line unpack <out >actual &&
+	test_cmp expect actual
+'
+
 test_expect_success 'refs/heads prefix' '
 	test-tool pkt-line pack >in <<-EOF &&
 	command=ls-refs
